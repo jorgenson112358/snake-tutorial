@@ -1,0 +1,98 @@
+local function put_food(self)
+	local maxWidth = 47
+	local maxHeight = 47
+	local foodTile = 3
+	local minXPosition = 2
+	local minYPosition = 2
+	self.food = { x = math.random(minXPosition, maxWidth), y = math.random(minYPosition, maxHeight) }
+	tilemap.set_tile("#grid", "layer1", self.food.x, self.food.y, foodTile)
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus") -- "." is shorthand for the current game object
+	
+	self.segments = {
+		{x = 7, y = 24},
+		{x = 8, y = 24},
+		{x = 9, y = 24},
+		{x = 10, y = 24} } -- <1>
+	self.dir = {x = 1, y = 0} -- <2>
+	self.speed = 7.0 -- <3>
+
+	self.directionQueue = {}
+	self.t = 0 -- <4>
+	self.alive = true
+
+	math.randomseed(socket.gettime())
+	put_food(self)
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	self.t = self.t + dt -- <1>
+	if self.t >= 1.0 / self.speed and self.alive then -- <2>
+		local newDirection = table.remove(self.directionQueue, 1)
+		if newDirection then
+			local opposite = newDirection.x == -self.dir.x or newDirection.y == -self.dir.y
+			if not opposite then
+				self.dir = newDirection
+			end
+		end
+		local head = self.segments[#self.segments] -- <3>
+		local newhead = {x = head.x + self.dir.x, y = head.y + self.dir.y} -- <4>
+
+		table.insert(self.segments, newhead) -- <5>
+
+		local tile = tilemap.get_tile("#grid", "layer1", newhead.x, newhead.y)
+		local wallTile = 4
+		local foodTile = 3
+		local snakeTile = 2		
+		
+		if tile == snakeTile or tile == wallTile then
+			self.alive = false
+		elseif tile == foodTile then
+			self.speed = self.speed + 1
+			put_food(self)
+		else
+			local tail = table.remove(self.segments, 1) -- <6>
+			tilemap.set_tile("#grid", "layer1", tail.x, tail.y, 0) -- <7>
+		end
+
+		for i, s in ipairs(self.segments) do -- <8>
+			tilemap.set_tile("#grid", "layer1", s.x, s.y, snakeTile) -- <9>
+		end
+
+		self.t = 0 -- <10>
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action) 
+	if action_id == hash("up") and action.pressed then
+		table.insert(self.directionQueue, { x = 0; y = 1})
+	elseif action_id == hash("down") and action.pressed then
+		table.insert(self.directionQueue, { x = 0; y = -1})
+	elseif action_id == hash("left") and action.pressed then
+		table.insert(self.directionQueue, { x = -1; y = 0})
+	elseif action_id == hash("right") and action.pressed then
+		table.insert(self.directionQueue, { x = 1; y = 0})
+	end
+end
+		
+
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
