@@ -63,8 +63,8 @@ function update(self, dt)
 			tilemap.set_tile("#grid", "layer1", tail.x, tail.y, 0) -- <7>
 		end
 
-		for i, s in ipairs(self.segments) do -- <8>
-			tilemap.set_tile("#grid", "layer1", s.x, s.y, snakeTile) -- <9>
+		for index, segment in ipairs(self.segments) do -- <8>
+			tilemap.set_tile("#grid", "layer1", segment.x, segment.y, snakeTile) -- <9>
 		end
 
 		self.t = 0 -- <10>
